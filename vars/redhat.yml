@@ -1,0 +1,19 @@
+
+
+packages:
+  - httpd
+  - php
+  - php-mysqlnd
+  - mariadb-server
+  - wget
+  - unzip
+  - python3-PyMySQL
+  - python3-pip
+  - rsync
+
+apache_service: httpd
+mariadb_service: mariadb
+apache_user: apache
+apache_group: apache
+apache_sites_available: /etc/httpd/conf.d
+apache_modules_dir: /etc/httpd/conf.modules.d

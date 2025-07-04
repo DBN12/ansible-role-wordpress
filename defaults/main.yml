@@ -1,0 +1,24 @@
+
+wordpress_db_name: wordpress_db
+wordpress_db_user: dilou
+wordpress_db_password: root
+wordpress_db_host: localhost
+mariadb_root_password: root
+
+
+apache_server_admin: dilou.banzouzi@supdevinci-edu.fr
+apache_document_root: /var/www/html
+wordpress_site_name: wordpress
+
+
+wordpress_download_url: https://wordpress.org/latest.zip
+wordpress_temp_dir: /tmp
+
+
+wordpress_owner: www-data
+wordpress_group: www-data
+wordpress_dir_mode: '755'
+wordpress_file_mode: '644'
+
+
+apache_port: 80

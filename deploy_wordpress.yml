@@ -1,0 +1,11 @@
+
+
+- name: Test du rôle WordPress Deploy
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  
+  roles:
+    - role: /root/projet/roles/ansible-role-wordpress/
+

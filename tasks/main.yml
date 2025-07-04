@@ -1,0 +1,190 @@
+# tasks/main.yml
+---
+# Tâches principales du rôle wordpress-deploy
+
+- name: Déterminer les variables spécifiques à la distribution
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Mise à jour des paquets
+  package:
+    update_cache: yes
+  become: yes
+
+- name: Installation des paquets nécessaires pour Ubuntu/Debian
+  apt:
+    name: "{{ packages }}"
+    state: present
+    update_cache: yes
+  become: yes
+  when: ansible_os_family == "Debian"
+
+- name: Installation des paquets nécessaires pour Rocky Linux/CentOS
+  dnf:
+    name: "{{ packages }}"
+    state: present
+  become: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Installation du module MySQL Python (Rocky Linux)
+  pip:
+    name: PyMySQL
+    executable: pip3
+  become: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Supprimer la page par défaut d'Apache
+  file:
+    path: "{{ apache_document_root }}/index.html"
+    state: absent
+  become: yes
+
+- name: Démarrer Apache (Ubuntu/Debian)
+  command: service apache2 start
+  become: yes
+  when: ansible_os_family == "Debian"
+  ignore_errors: yes
+
+- name: Démarrer httpd (Rocky Linux) - conteneur
+  shell: |
+    if ! pgrep httpd > /dev/null; then
+      /usr/sbin/httpd -DFOREGROUND &
+    fi
+  become: yes
+  when: ansible_os_family == "RedHat"
+  ignore_errors: yes
+
+- name: Démarrer MariaDB (conteneur)
+  shell: |
+    if ! pgrep mysqld > /dev/null; then
+      mysqld_safe --datadir=/var/lib/mysql &
+    fi
+  become: yes
+
+- name: Attendre que MariaDB soit prêt
+  wait_for:
+    port: 3306
+    host: localhost
+    timeout: 60
+    delay: 10
+
+- name: Sécuriser MariaDB - Définir le mot de passe root
+  shell: |
+    mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mariadb_root_password }}';" 2>/dev/null || \
+    mysql -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{{ mariadb_root_password }}');" 2>/dev/null || \
+    mysqladmin -u root password '{{ mariadb_root_password }}' 2>/dev/null || true
+  become: yes
+  ignore_errors: yes
+
+- name: Supprimer les utilisateurs anonymes
+  mysql_user:
+    name: ""
+    host_all: yes
+    state: absent
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+  become: yes
+
+- name: Supprimer la base de données test
+  mysql_db:
+    name: test
+    state: absent
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+  become: yes
+
+- name: Créer la base de données WordPress
+  mysql_db:
+    name: "{{ wordpress_db_name }}"
+    state: present
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+  become: yes
+
+- name: Créer l'utilisateur WordPress
+  mysql_user:
+    name: "{{ wordpress_db_user }}"
+    password: "{{ wordpress_db_password }}"
+    priv: "{{ wordpress_db_name }}.*:ALL"
+    host: "{{ wordpress_db_host }}"
+    state: present
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+  become: yes
+
+- name: Télécharger WordPress
+  get_url:
+    url: "{{ wordpress_download_url }}"
+    dest: "{{ wordpress_temp_dir }}/latest.zip"
+    mode: '0644'
+  become: yes
+
+- name: Extraire WordPress
+  unarchive:
+    src: "{{ wordpress_temp_dir }}/latest.zip"
+    dest: "{{ wordpress_temp_dir }}"
+    remote_src: yes
+  become: yes
+
+- name: Copier les fichiers WordPress
+  synchronize:
+    src: "{{ wordpress_temp_dir }}/wordpress/"
+    dest: "{{ apache_document_root }}/"
+    delete: no
+    recursive: yes
+  delegate_to: "{{ inventory_hostname }}"
+  become: yes
+
+- name: Définir les permissions sur les fichiers WordPress
+  file:
+    path: "{{ apache_document_root }}"
+    owner: "{{ apache_user }}"
+    group: "{{ apache_group }}"
+    mode: "{{ wordpress_dir_mode }}"
+    recurse: yes
+  become: yes
+
+- name: Créer le fichier wp-config.php
+  template:
+    src: /root/projet/roles/ansible-role-wordpress/templates/wp-config.php.j2
+    dest: "{{ apache_document_root }}/wp-config.php"
+    owner: "{{ apache_user }}"
+    group: "{{ apache_group }}"
+    mode: '0640'
+  become: yes
+
+- name: Configurer Apache pour WordPress (Ubuntu/Debian)
+  template:
+    src: /root/projet/roles/ansible-role-wordpress/templates/wordpress.j2
+    dest: "{{ apache_sites_available }}/wordpress.conf"
+    backup: yes
+  become: yes
+  when: ansible_os_family == "Debian"
+  notify: 
+    - enable wordpress site
+    - restart apache
+
+- name: Configurer Apache pour WordPress (Rocky Linux)
+  template:
+    src: wordpress-rocky.conf.j2
+    dest: "{{ apache_sites_available }}/wordpress.conf"
+    backup: yes
+  become: yes
+  when: ansible_os_family == "RedHat"
+  notify: restart httpd
+
+- name: Activer le module rewrite (Ubuntu/Debian)
+  apache2_module:
+    name: rewrite
+    state: present
+  become: yes
+  when: ansible_os_family == "Debian"
+  notify: restart apache
+
+- name: Nettoyer les fichiers temporaires
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ wordpress_temp_dir }}/latest.zip"
+    - "{{ wordpress_temp_dir }}/wordpress"
+  become: yes

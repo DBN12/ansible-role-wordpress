@@ -1,0 +1,39 @@
+<?php
+/**
+ * Configuration WordPress générée par Ansible
+ */
+
+// ** Réglages MySQL ** //
+define('DB_NAME', '{{ wordpress_db_name }}');
+define('DB_USER', '{{ wordpress_db_user }}');
+define('DB_PASSWORD', '{{ wordpress_db_password }}');
+define('DB_HOST', '{{ wordpress_db_host }}');
+define('DB_CHARSET', 'utf8');
+define('DB_COLLATE', '');
+
+// ** Clés d'authentification ** //
+define('AUTH_KEY',         '{{ ansible_date_time.epoch }}{{ wordpress_db_name }}auth');
+define('SECURE_AUTH_KEY',  '{{ ansible_date_time.epoch }}{{ wordpress_db_user }}secure');
+define('LOGGED_IN_KEY',    '{{ ansible_date_time.epoch }}{{ wordpress_db_password }}logged');
+define('NONCE_KEY',        '{{ ansible_date_time.epoch }}{{ wordpress_db_host }}nonce');
+define('AUTH_SALT',        '{{ ansible_date_time.epoch }}{{ wordpress_db_name }}salt1');
+define('SECURE_AUTH_SALT', '{{ ansible_date_time.epoch }}{{ wordpress_db_user }}salt2');
+define('LOGGED_IN_SALT',   '{{ ansible_date_time.epoch }}{{ wordpress_db_password }}salt3');
+define('NONCE_SALT',       '{{ ansible_date_time.epoch }}{{ wordpress_db_host }}salt4');
+
+// ** Préfixe de table ** //
+$table_prefix = 'wp_';
+
+// ** Mode debug ** //
+define('WP_DEBUG', false);
+
+// ** Répertoire de contenu personnalisé ** //
+define('WP_CONTENT_DIR', dirname(__FILE__) . '/wp-content');
+define('WP_CONTENT_URL', 'http://' . $_SERVER['HTTP_HOST'] . '/wp-content');
+
+// ** Réglages WordPress ** //
+if (!defined('ABSPATH')) {
+    define('ABSPATH', dirname(__FILE__) . '/');
+}
+
+require_once(ABSPATH . 'wp-settings.php');

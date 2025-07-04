@@ -1,0 +1,38 @@
+
+
+debian_packages:
+  - apache2
+  - php
+  - libapache2-mod-php
+  - php-mysql
+  - mariadb-server
+  - wget
+  - unzip
+
+debian_apache_service: apache2
+debian_mariadb_service: mariadb
+debian_apache_user: www-data
+debian_apache_group: www-data
+debian_apache_sites_available: /etc/apache2/sites-available
+debian_apache_modules_dir: /etc/apache2/mods-enabled
+
+# Variables pour Rocky Linux/CentOS
+rocky_packages:
+  - httpd
+  - php
+  - php-mysqlnd
+  - mariadb-server
+  - wget
+  - unzip
+
+rocky_apache_service: httpd
+rocky_mariadb_service: mariadb
+rocky_apache_user: apache
+rocky_apache_group: apache
+rocky_apache_sites_available: /etc/httpd/conf.d
+rocky_apache_modules_dir: /etc/httpd/conf.modules.d
+
+# Variables par famille de distribution
+package_manager:
+  Debian: apt
+  RedHat: dnf
