@@ -1,12 +1,12 @@
-
 ---
 galaxy_info:
   author: DBN12
+  namespace: DBN12        # <— votre namespace Galaxy
+  role_name: wordpress    # <— nom “court” et valide (minuscules/chiffres/tirets)
   description: Ansible role pour déployer WordPress avec MariaDB sur Ubuntu et Rocky Linux
   company: HR-PATH
   license: MIT
-  min_ansible_version: "2.10"
-  
+  min_ansible_version: 2.10
   platforms:
     - name: Ubuntu
       versions:
@@ -20,7 +20,6 @@ galaxy_info:
       versions:
         - bullseye
         - bookworm
-  
   galaxy_tags:
     - wordpress
     - apache
