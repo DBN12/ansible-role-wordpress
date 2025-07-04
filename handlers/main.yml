@@ -1,38 +1,18 @@
-
-- name: restart apache
-  command: service apache2 restart
-  become: yes
-  ignore_errors: yes
-
-- name: restart httpd
-  shell: |
-    pkill httpd || true
-    sleep 2
-    /usr/sbin/httpd -DFOREGROUND &
-  become: yes
-  ignore_errors: yes
-
-- name: restart mariadb
-  shell: |
-    pkill mysqld || true
-    sleep 5
-    mysqld_safe --datadir=/var/lib/mysql &
-  become: yes
-  ignore_errors: yes
-
-- name: reload apache
-  command: service apache2 reload
-  become: yes
-  ignore_errors: yes
-
-- name: reload httpd
-  shell: |
-    pkill -HUP httpd || true
-  become: yes
-  ignore_errors: yes
+---
+# handlers/main.yml
 
 - name: enable wordpress site
-  command: a2ensite wordpress.conf
   become: yes
-  ignore_errors: yes
+  command: a2ensite wordpress.conf
+  args:
+    # ne ré-active le site que s'il n'est pas déjà dans sites-enabled
+    creates: /etc/apache2/sites-enabled/wordpress.conf
   notify: restart apache
+
+- name: restart apache
+  become: yes
+  command: /etc/init.d/apache2 restart
+
+- name: restart httpd
+  become: yes
+  command: /etc/init.d/httpd restart
